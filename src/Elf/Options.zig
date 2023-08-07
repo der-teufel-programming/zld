@@ -66,7 +66,6 @@ const usage =
     \\
     \\ld.zld: supported targets: elf64-x86-64
     \\ld.zld: supported emulations: elf_x86_64
-    \\
 ;
 
 const version =
