@@ -31,6 +31,19 @@ pub fn build(b: *std.Build) void {
         .optimize = mode,
     });
 
+    const zld_mod = b.addModule("zld", .{
+        .root_source_file = b.path("src/main.zig"),
+        .target = target,
+        .optimize = mode,
+        .sanitize_thread = sanitize_thread,
+        .single_threaded = single_threaded,
+        .strip = strip,
+        .imports = &.{
+            .{ .name = "yaml", .module = yaml.module("yaml") },
+            .{ .name = "dis_x86_64", .module = dis_x86_64.module("dis_x86_64") },
+        },
+    });
+
     const exe = b.addExecutable(.{
         .name = "zld",
         .root_source_file = b.path("src/main.zig"),
@@ -48,6 +61,7 @@ pub fn build(b: *std.Build) void {
 
     const exe_opts = b.addOptions();
     exe.root_module.addOptions("build_options", exe_opts);
+    zld_mod.addOptions("build_options", exe_opts);
     exe_opts.addOption(bool, "enable_logging", enable_logging);
     exe_opts.addOption(bool, "enable_tracy", enable_tracy != null);
     exe_opts.addOption(usize, "tracy_callstack_depth", tracy_callstack_depth);
@@ -66,11 +80,16 @@ pub fn build(b: *std.Build) void {
 
         exe.addIncludePath(.{ .cwd_relative = tracy_path });
         exe.addCSourceFile(.{ .file = .{ .cwd_relative = client_cpp }, .flags = tracy_c_flags });
+        zld_mod.addIncludePath(.{ .cwd_relative = tracy_path });
+        zld_mod.addCSourceFile(.{ .file = .{ .cwd_relative = client_cpp }, .flags = tracy_c_flags });
         exe.root_module.linkSystemLibrary("c++", .{ .use_pkg_config = .no });
+        zld_mod.linkSystemLibrary("c++", .{ .use_pkg_config = .no });
 
         if (target.result.os.tag == .windows) {
             exe.linkSystemLibrary("dbghelp");
             exe.linkSystemLibrary("ws2_32");
+            zld_mod.linkSystemLibrary("dbghelp", .{});
+            zld_mod.linkSystemLibrary("ws2_32", .{});
         }
     }
     const install = b.addInstallArtifact(exe, .{});
