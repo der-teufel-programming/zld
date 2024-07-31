@@ -32,7 +32,7 @@ pub fn build(b: *std.Build) void {
     });
 
     const zld_mod = b.addModule("zld", .{
-        .root_source_file = b.path("src/main.zig"),
+        .root_source_file = b.path("src/Zld.zig"),
         .target = target,
         .optimize = mode,
         .sanitize_thread = sanitize_thread,
